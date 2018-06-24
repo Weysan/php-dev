@@ -1,15 +1,13 @@
-FROM php:7.1-apache
+FROM php:7.2-apache
 
 RUN a2enmod vhost_alias
 RUN a2enmod rewrite
 RUN a2enmod ssl
-
 	
 # APC
 RUN pear config-set php_ini /usr/local/etc/php/php.ini
 RUN pecl config-set php_ini /usr/local/etc/php/php.ini
-RUN pecl install apc redis memcached xdebug
-
+    
 RUN apt-get update && apt-get install -y \
 	openssl \
 	mysql-client \
@@ -17,10 +15,12 @@ RUN apt-get update && apt-get install -y \
 	libfreetype6-dev \
 	libjpeg62-turbo-dev \
 	libmcrypt-dev \
-	libpng12-dev \
+	libpng-dev \
 	sendmail \
 	git \
 	libmemcached-dev \
+	zlib1g-dev \
+	&& pecl install redis memcached xdebug \
         && docker-php-ext-install mysqli \
        	&& docker-php-ext-install opcache \
  	&& docker-php-ext-install pdo_mysql \
@@ -29,7 +29,8 @@ RUN apt-get update && apt-get install -y \
 	&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
         && docker-php-ext-install -j$(nproc) gd  \
         && docker-php-ext-enable xdebug
-    
+
+
 #MEMCACHED
 RUN git clone --branch php7 https://github.com/php-memcached-dev/php-memcached /usr/src/php/ext/memcached \
   && cd /usr/src/php/ext/memcached \
