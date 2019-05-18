@@ -1,13 +1,13 @@
-FROM php:7.2-apache
+FROM php:7.3-apache
 
 RUN a2enmod vhost_alias
 RUN a2enmod rewrite
 RUN a2enmod ssl
-	
+
 # APC
 RUN pear config-set php_ini /usr/local/etc/php/php.ini
 RUN pecl config-set php_ini /usr/local/etc/php/php.ini
-    
+
 RUN apt-get update && apt-get install -y \
 	openssl \
 	mysql-client \
@@ -20,7 +20,10 @@ RUN apt-get update && apt-get install -y \
 	git \
 	libmemcached-dev \
 	zlib1g-dev \
-	&& pecl install redis memcached xdebug mcrypt-1.0.1 \
+	libzip-dev \
+	zip \
+	unzip \
+	&& pecl install redis memcached xdebug mcrypt-1.0.2 \
         && docker-php-ext-install mysqli \
        	&& docker-php-ext-install opcache \
  	&& docker-php-ext-install pdo_mysql \
@@ -28,17 +31,21 @@ RUN apt-get update && apt-get install -y \
 	&& docker-php-ext-install -j$(nproc) iconv \
 	&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
         && docker-php-ext-install -j$(nproc) gd  \
-        && docker-php-ext-enable xdebug mcrypt
+        && docker-php-ext-enable xdebug \
+				&& docker-php-ext-enable mcrypt
 
 
 #MEMCACHED
-RUN git clone --branch php7 https://github.com/php-memcached-dev/php-memcached /usr/src/php/ext/memcached \
-  && cd /usr/src/php/ext/memcached \
-  && docker-php-ext-configure memcached \
-  && docker-php-ext-install memcached \
-  && docker-php-ext-install pcntl \
-  && docker-php-ext-install bcmath
-	
+RUN pecl install igbinary && \
+# Enable PHP extensions
+    docker-php-ext-enable igbinary memcached && \
+    rm -rf /tmp/*
+
+RUN docker-php-ext-install pcntl \
+  && docker-php-ext-install bcmath \
+	&& docker-php-ext-configure zip --with-libzip \
+  && docker-php-ext-install zip
+
 RUN ( \
     echo "opcache.memory_consumption=128"; \
     echo "opcache.interned_strings_buffer=8"; \
@@ -54,11 +61,6 @@ ADD ssl/server.crt /usr/local/apache/conf/ssl.crt
 ADD ssl/server.key /usr/local/apache/conf/ssl.key
 
 RUN service apache2 restart
-
-
-RUN apt-get update && apt-get install -y \
-                    zip \
-                    unzip
 
 #Composer
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
