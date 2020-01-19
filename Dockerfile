@@ -57,6 +57,9 @@ RUN ( \
     echo "opcache.enable_cli=1"; \
     ) > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
+# change SSL configuration
+RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/' /etc/ssl/openssl.cnf
+
 #SSL CONFIG
 RUN mkdir -p /usr/local/apache/conf
 ADD ssl/server.crt /usr/local/apache/conf/ssl.crt
