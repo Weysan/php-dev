@@ -1,4 +1,4 @@
-FROM php:7.3-apache
+FROM php:7.4-apache
 
 RUN a2enmod vhost_alias
 RUN a2enmod rewrite
@@ -10,8 +10,9 @@ RUN pecl config-set php_ini /usr/local/etc/php/php.ini
 
 RUN apt-get update && apt-get install -y \
 	openssl \
-	mysql-client \
-        libapache2-mod-fcgid \
+	default-mysql-client \
+	libonig-dev \
+    libapache2-mod-fcgid \
 	libfreetype6-dev \
 	libjpeg62-turbo-dev \
 	libmcrypt-dev \
@@ -24,15 +25,16 @@ RUN apt-get update && apt-get install -y \
 	zip \
 	unzip \
 	&& pecl install redis memcached xdebug mcrypt-1.0.2 \
-        && docker-php-ext-install mysqli \
-       	&& docker-php-ext-install opcache \
+    && docker-php-ext-install mysqli \
+    && docker-php-ext-install opcache \
  	&& docker-php-ext-install pdo_mysql \
-        && docker-php-ext-install mbstring \
+    && docker-php-ext-install mbstring \
+    && docker-php-ext-install exif \
 	&& docker-php-ext-install -j$(nproc) iconv \
-	&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-        && docker-php-ext-install -j$(nproc) gd  \
-        && docker-php-ext-enable xdebug \
-				&& docker-php-ext-enable mcrypt
+	&& docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd  \
+    && docker-php-ext-enable xdebug \
+    && docker-php-ext-enable exif
 
 
 #MEMCACHED
@@ -42,9 +44,9 @@ RUN pecl install igbinary && \
     rm -rf /tmp/*
 
 RUN docker-php-ext-install pcntl \
-  && docker-php-ext-install bcmath \
-	&& docker-php-ext-configure zip --with-libzip \
-  && docker-php-ext-install zip
+    && docker-php-ext-install bcmath \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install zip
 
 RUN ( \
     echo "opcache.memory_consumption=128"; \
